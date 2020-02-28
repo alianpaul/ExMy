@@ -96,7 +96,8 @@ struct ExMy {
     uint32 bits       = 0; memcpy(&bits, &data, sizeof(float));
     uint32 exp_bits   = (bits >> orig_Y) & 0xff;
     int    exp        = exp_bits - orig_BIAS;
-    int    exp_denorm = (1 - BIAS) - Y; //The min_denorm's E of ExMy that E8M23 can represents
+    int    exp_denorm = (1 - BIAS) - Y;
+    //The min_denorm's E of ExMy that E8M23 can represents
       
     if(exp >= (1 << X) - 1 - BIAS)
       {
