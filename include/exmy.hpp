@@ -108,10 +108,32 @@ struct ExMy {
 	uint32 res   = sign | exp | frac;
 	memcpy(&data, &res, sizeof(float));
       }
-    else if(exp < exp_denorm)
+    else if(exp < exp_denorm) // -1??
       {
 	data = 0.0f;
       }
+  }
+
+  float eps_spacing()
+  {
+    uint32 bits = 0; memcpy(&bits, &data, sizeof(float));
+    bits &= 0x7fffffff; bits >>= orig_Y - Y;
+    uint32 next = bits + 1;
+
+    bits <<= orig_Y - Y;
+    next <<= orig_Y - Y;
+
+    float curr_f = 0; memcpy(&curr_f, &bits, sizeof(float));
+    float next_f = 0; memcpy(&next_f, &next, sizeof(float));
+    
+    float eps_spacing = next_f - curr_f;
+    
+    if (eps_spacing < min_denorm()) eps_spacing = min_denorm();
+    /* Why this is necessary?
+     * min_denorm is the smallest eps_spacing for ExMy.
+     */
+
+    return eps_spacing;
   }
 };
 
