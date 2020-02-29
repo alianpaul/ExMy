@@ -14,12 +14,21 @@ void CHECK_EPS_SPACING()
   uint32 result = exp | frac;
   memcpy(&next_pow2_min_norm, &result, sizeof(float));
   ExMy<X, Y> exmy_next_pow2_min_norm(next_pow2_min_norm);
-
   assert(int(exmy_next_pow2_min_norm.eps_spacing() / exmy_min_norm.eps_spacing()) == 2);
 
-  /*eps spacing in [0, max_denorm] is the same in [min_norm, next_pow2_min_norm]*/
+  /*The eps spacing in [0, max_denorm] is the same in [min_norm, next_pow2_min_norm]*/
   ExMy<X, Y> exmy_zero;
   assert(exmy_zero.eps_spacing() == exmy_min_norm.eps_spacing());
+
+
+  /*The eps spacing is the same*/
+  float  next_min_norm = 0;
+  exp  = (ExMy<X, Y>::orig_BIAS + 1 - ExMy<X, Y>::BIAS) << ExMy<X, Y>::orig_Y;
+  frac = 1;
+  result = exp | frac;
+  memcpy(&next_min_norm, &result, sizeof(float));
+  ExMy<X, Y> exmy_next_min_norm(next_min_norm);
+  assert(exmy_min_norm.eps_spacing() == exmy_next_min_norm.eps_spacing());
   printf("e%dm%d \t pass\n", X, Y);
 }
 
