@@ -44,9 +44,9 @@ struct ExMy {
      * Under the assumption that X < 8, All denorms of EXMY are actually norms of E8M23.
      * Be aware of the implicit 1.
      * E8M23                       EXMY
-     * [1.M] * 2^(E - orig_BIAS) = [0.0..01] * 2^(1 - BIAS)
+     * [1.00..0] * 2^(E - orig_BIAS) = [0.0..01] * 2^(1 - BIAS)
      *
-     * [1.M]
+     * [1.00..0]
      * --------- = 2 ^ (1 - BIAS + orig_BIAS - E)
      * [0.0..01]
      * 
@@ -108,8 +108,15 @@ struct ExMy {
 	uint32 res   = sign | exp | frac;
 	memcpy(&data, &res, sizeof(float));
       }
-    else if(exp < exp_denorm) // -1??
+    else if(exp < exp_denorm - 1)
       {
+	/* The min_denorm  of exmy in e8m23: 2^(-Y) * 2^(1 - bias) = 1.00..0 * 2^(1 - bias -Y)
+	 * The min_denorm / 2 would be:      1.00..0 * 2^((1 - bias - Y) - 1)
+	 *
+	 * The e8m23 numbers in [min_denorm / 2, min_denorm] should be
+	 * be rounded to min_denorm. *Round* will take the job.  Only
+	 * numbers in [0, min_denorm / 2) can be safely set to 0
+	 */
 	data = 0.0f;
       }
   }
@@ -119,6 +126,12 @@ struct ExMy {
     uint32 bits = 0; memcpy(&bits, &data, sizeof(float));
     bits &= 0x7fffffff; bits >>= orig_Y - Y;
     uint32 next = bits + 1;
+    /* Whay +1 is enough? 3 cases needs to be consider:
+     *   denorm + 1 -> denorm
+     *   max_denorm + 1 -> min_norm: 0.11..1 * 2^e ->  1.00..0 * 2^e
+     *   norm + 1 -> norm:           1.11..1 * 2^e -> 10.00..0 * 2^e = 1.00..0 * 2^(e + 1)
+     * All 3 
+     */
 
     bits <<= orig_Y - Y;
     next <<= orig_Y - Y;
@@ -129,10 +142,12 @@ struct ExMy {
     float eps_spacing = next_f - curr_f;
     
     if (eps_spacing < min_denorm()) eps_spacing = min_denorm();
-    /* Why this is necessary?
-     * min_denorm is the smallest eps_spacing for ExMy.
+    /* Why this is necessary?  min_denorm is the smallest eps_spacing
+     * for ExMy.  And we are operating on the e8m23 data and we didn't
+     * consider the factor that its range is bigger than exmy's. So it
+     * could be possible that we got an eps_spacing of e8m23 that
+     * smaller than exmy
      */
-
     return eps_spacing;
   }
 };
