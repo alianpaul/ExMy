@@ -114,8 +114,8 @@ struct ExMy {
 	 * The min_denorm / 2 would be:      1.00..0 * 2^((1 - bias - Y) - 1)
 	 *
 	 * The e8m23 numbers in [min_denorm / 2, min_denorm] should be
-	 * be rounded to min_denorm. *Round* will take the job.  Only
-	 * numbers in [0, min_denorm / 2) can be safely set to 0
+	 * be rounded to min_denorm. *Round* will take the job. Only
+	 * numbers in [0, min_denorm / 2) can be safely set to 0.
 	 */
 	data = 0.0f;
       }
@@ -126,11 +126,33 @@ struct ExMy {
     uint32 bits = 0; memcpy(&bits, &data, sizeof(float));
     bits &= 0x7fffffff; bits >>= orig_Y - Y;
     uint32 next = bits + 1;
-    /* Whay +1 is enough? 3 cases needs to be consider:
-     *   denorm + 1 -> denorm
-     *   max_denorm + 1 -> min_norm: 0.11..1 * 2^e ->  1.00..0 * 2^e
-     *   norm + 1 -> norm:           1.11..1 * 2^e -> 10.00..0 * 2^e = 1.00..0 * 2^(e + 1)
-     * All 3 
+    /* Whay +1 is enough?  First of all, we are operatig on e8m23
+     * norm. e8m23 denorms will round to 0(by limitrange). e8m23 has
+     * its own eps_spacing. We can get that by +1 without shifting.
+     *
+     * e8m23: 
+     *
+     * dnorm + 1 -> dnorm: easy one, no mantissa bit overflow.
+     *
+     * max_dnorm + 1 -> min_norm: mantissa overflows to the exponent
+     * bit and when this happens, the result is exactly min_norm.
+     *
+     * norm + 1 -> norm. Also should be fine when +1 overflows to
+     * exponent bit because we just got the next norm.
+     * 
+     * How about exmy? This is what we really want. We are using e8m23
+     * to represent exmy's denorm and norm. If e8m23 falls into
+     * [min_norm, max_norm] of exmy. Then there is no implicit 1
+     * inconsistency.  We can safely round(to zero) the e8m23 to the
+     * nearest exmy by truncating the last orig_Y - Y bits and find
+     * the exmy' corresponding eps.  But this rule is not correct when
+     * e8m23 falls into exmy' [min_denorm/2, min_norm) range because
+     * there is no implicit 1 there.  The result after truncating
+     * contains the exmy's denorm, but it also contains some real
+     * number that is not exmy. The eps_spacing we got could smaller
+     * than what we want.  But the eps_spacing in this range is
+     * actually fixed and is actually min_denorm. So a detection of
+     * the eps_spacing underflow at last should be enough.
      */
 
     bits <<= orig_Y - Y;
