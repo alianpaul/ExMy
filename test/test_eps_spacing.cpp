@@ -43,4 +43,9 @@ int main(int argc, char **argv)
   CHECK_EPS_SPACING<6, 9>();
   CHECK_EPS_SPACING<7, 8>();
   // CHECK_EPS_SPACING<8, 7>();
+
+  /* TODO
+   * Check eps(in denorm) == min_denorm
+   * Check eps(in denorm) == min_norm - max_denorm
+   */
 }

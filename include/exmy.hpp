@@ -99,26 +99,25 @@ struct ExMy {
     int    exp_denorm = (1 - BIAS) - Y;
     //The min_denorm's E of ExMy that E8M23 can represents
       
-    if(exp >= (1 << X) - 1 - BIAS)
-      {
-	uint32 sign  = (data < 0) ? 1 << 31 : 0;
-	uint32 exp   = ((1 << X) - 2 - BIAS + orig_BIAS) << orig_Y;
-	uint32 frac  = ((1 << orig_Y) - 1) & ~((1 << (orig_Y - Y)) - 1);
+    if(exp >= (1 << X) - 1 - BIAS){
+   
+      uint32 sign  = (data < 0) ? 1 << 31 : 0;
+      uint32 exp   = ((1 << X) - 2 - BIAS + orig_BIAS) << orig_Y;
+      uint32 frac  = ((1 << orig_Y) - 1) & ~((1 << (orig_Y - Y)) - 1);
 	
-	uint32 res   = sign | exp | frac;
-	memcpy(&data, &res, sizeof(float));
-      }
-    else if(exp < exp_denorm - 1)
-      {
+      uint32 res   = sign | exp | frac;
+      memcpy(&data, &res, sizeof(float));
+    }
+    else if(exp < exp_denorm - 1) {
 	/* The min_denorm  of exmy in e8m23: 2^(-Y) * 2^(1 - bias) = 1.00..0 * 2^(1 - bias -Y)
 	 * The min_denorm / 2 would be:      1.00..0 * 2^((1 - bias - Y) - 1)
 	 *
-	 * The e8m23 numbers in [min_denorm / 2, min_denorm] should be
+	 * The e8m23 numbers in (min_denorm / 2, min_denorm) should be
 	 * be rounded to min_denorm. *Round* will take the job. Only
-	 * numbers in [0, min_denorm / 2) can be safely set to 0.
+	 * numbers in [0, min_denorm / 2] can be safely set to 0.
 	 */
-	data = 0.0f;
-      }
+      data = 0.0f;
+    }
   }
 
   float eps_spacing()
@@ -171,6 +170,55 @@ struct ExMy {
      * smaller than exmy
      */
     return eps_spacing;
+  }
+
+  void round()
+  {
+    float bias = eps_spacing() / 2;
+
+    //round-to-even
+    if(data < min_denorm() + min_denorm()){
+      /* bit that identifying even/odd(the least significant bit after
+       * truncating) is in exp.
+       */
+      
+      /* if data == min_denorm + bias, tied to even by rounding to min_denorm * 2.
+       * So no need to set bias to 0
+       */
+      
+      //min_denorm()
+      if(data <= bias){
+	data = bias = 0;
+      }
+    }
+    else{
+      /* bit/
+      uint32 bits   = 0; memcpy(&bits, &data, sizeof(float));      
+      uint32 eo_bit = 1 << (orig_Y - Y); //even odd bit pos
+
+      if (data < min_norm()){
+	/*exmy dnorm -> e8m23 norm. add the implicit 1 explicitly*/
+	uint32 exp      = (bits >> orig_Y) & 0xff - orig_BIAS;
+	uint32 exp_exmy = 1 - BIAS;
+	eo_bit <<= exp_exmy - exp;
+      }
+
+      if(!(bits & eo_bit) &&
+	 (bits & (eo_bit - 1) & (eo_bit >> 1))){
+	/*even after trunc, and data is at the halfway*/
+	bias = 0;
+      }
+    }
+
+    data += bias;
+
+    //Now we can truncate safely
+    trunc()
+  }
+
+  void trunc()
+  {
+    
   }
 };
 
