@@ -4,7 +4,27 @@
 #include <cstdio>
 #include <cstring>
 
+//For debugging
+#include <iostream>
+#include <iomanip>
+#include <bitset>
+
 using uint32 = unsigned int;
+//For debuging
+void print_bits(std::ostream& os, uint32 bits)
+{
+  if(bits >> 31)
+    os << "1 ";
+  else
+    os << "0 ";
+
+  //E
+  uint32 E = (bits >> 23) & 0xff;
+  os << std::bitset<8>(E) << ' ';
+
+  uint32 M = bits & ((1 << (23 + 1)) - 1);
+  os << std::bitset<23>(M) << '\n';
+}
 
 /* ExMy for X < 8
  * x: exponent bits, y: mantissa bits
@@ -175,9 +195,23 @@ struct ExMy {
   void round()
   {
     float bias = eps_spacing() / 2;
-
+    
+    uint32 bits   = 0; memcpy(&bits, &data, sizeof(float));      
+    uint32 eo_bit = 1 << (orig_Y - Y); //even odd bit pos
+    if (data < min_norm()){
+      /*exmy dnorm -> e8m23 norm. add the implicit 1 explicitly*/
+      
+      /* Be careful of the uint32 -> int32 overflow issue.  Only the
+       * raw exp bits(no bias yet) can be safely save to uint32.
+       */
+      uint32 exp      = (bits >> orig_Y) & 0xff;
+      uint32 exp_exmy = 1;
+      eo_bit <<= exp_exmy - BIAS - exp + orig_BIAS;
+    }
+    
     //round-to-even
     if(data < min_denorm() + min_denorm()){
+      std::cout << "< 2 * min_denorm" << "\n";      
       /* bit that identifying even/odd(the least significant bit after
        * truncating) is in exp.
        */
@@ -192,17 +226,7 @@ struct ExMy {
       }
     }
     else{
-      /* bit/
-      uint32 bits   = 0; memcpy(&bits, &data, sizeof(float));      
-      uint32 eo_bit = 1 << (orig_Y - Y); //even odd bit pos
-
-      if (data < min_norm()){
-	/*exmy dnorm -> e8m23 norm. add the implicit 1 explicitly*/
-	uint32 exp      = (bits >> orig_Y) & 0xff - orig_BIAS;
-	uint32 exp_exmy = 1 - BIAS;
-	eo_bit <<= exp_exmy - exp;
-      }
-
+      std::cout << "> 2 * min_denorm" << "\n";
       if(!(bits & eo_bit) &&
 	 (bits & (eo_bit - 1) & (eo_bit >> 1))){
 	/*even after trunc, and data is at the halfway*/
@@ -210,16 +234,46 @@ struct ExMy {
       }
     }
 
+    print_bits(std::cout, eo_bit);
+    
     data += bias;
-
     //Now we can truncate safely
-    trunc()
+    trunc();
   }
 
   void trunc()
   {
     
   }
+
 };
+
+//For debug
+template<int X, int Y>
+std::ostream& operator<<(std::ostream& os, ExMy<X, Y> data)
+{
+  uint32 bits = 0; memcpy(&bits, &data, sizeof(float));
+  if(bits >> 31)
+    os << "1 ";
+  else
+    os << "0 ";
+
+  //E
+  uint32 E = (bits >> 23) & 0xff;
+  os << std::bitset<8>(E) << ' ';
+
+  uint32 M = bits & ((1 << (23 + 1)) - 1);
+  os << std::bitset<23>(M) << ' ';
+
+  int exp = (int) E - 127;
+  os << E << " -127 = "<< exp << " ";
+
+  int E_exmy = exp + (int) ExMy<X, Y>::BIAS; //Can be -1
+  os << "+" << ExMy<X, Y>::BIAS << " = " << E_exmy << " " \
+     << std::bitset<X>(E_exmy < 0 ? 0 : E_exmy);
+  
+  return os;
+}
+
 
 #endif

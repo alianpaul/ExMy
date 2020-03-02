@@ -22,7 +22,6 @@ void CHECK_EPS_SPACING()
   ExMy<X, Y> exmy_zero;
   assert(exmy_zero.eps_spacing() == exmy_min_norm.eps_spacing());
 
-
   /* Check #3
    * The eps spacing is the same in the power of 2 range
    */
@@ -56,10 +55,4 @@ int main(int argc, char **argv)
   CHECK_EPS_SPACING<5, 10>();
   CHECK_EPS_SPACING<6, 9>();
   CHECK_EPS_SPACING<7, 8>();
-  // CHECK_EPS_SPACING<8, 7>();
-
-  /* TODO
-   * Check eps(in denorm) == min_denorm
-   * Check eps(in denorm) == min_norm - max_denorm
-   */
 }
