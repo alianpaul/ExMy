@@ -211,7 +211,8 @@ struct ExMy {
     
     //round-to-even
     if(data < min_denorm() + min_denorm()){
-      std::cout << "< 2 * min_denorm" << "\n";      
+      //std::cout << "< 2 * min_denorm" << "\n";
+      
       /* bit that identifying even/odd(the least significant bit after
        * truncating) is in exp.
        */
@@ -220,13 +221,14 @@ struct ExMy {
        * So no need to set bias to 0
        */
       
-      //min_denorm()
+      //min_denorm() / 2, round to even(zero)
       if(data <= bias){
 	data = bias = 0;
       }
     }
     else{
-      std::cout << "> 2 * min_denorm" << "\n";
+      //std::cout << "> 2 * min_denorm" << "\n";
+      
       if(!(bits & eo_bit) &&
 	 (bits & (eo_bit - 1) & (eo_bit >> 1))){
 	/*even after trunc, and data is at the halfway*/
@@ -234,25 +236,24 @@ struct ExMy {
       }
     }
 
-    print_bits(std::cout, eo_bit);
+    //print_bits(std::cout, eo_bit);
     
     data += bias;
-    //Now we can truncate safely
-    trunc();
-  }
-
-  void trunc()
-  {
     
+    //Now we can truncate safely
+    uint32 truncate_mask = ~(eo_bit - 1);
+    memcpy(&bits, &data, sizeof(float));
+    bits &= truncate_mask;
+    memcpy(&data, &bits, sizeof(float));
   }
 
 };
 
 //For debug
 template<int X, int Y>
-std::ostream& operator<<(std::ostream& os, ExMy<X, Y> data)
+std::ostream& operator<<(std::ostream& os, ExMy<X, Y> exmy)
 {
-  uint32 bits = 0; memcpy(&bits, &data, sizeof(float));
+  uint32 bits = 0; memcpy(&bits, &exmy.data, sizeof(float));
   if(bits >> 31)
     os << "1 ";
   else

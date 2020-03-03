@@ -64,7 +64,23 @@ void CHECK_ROUND_EO_BIT()
   std::cout << "\n";
 }
 
+void CHECK_ROUND_E8M10()
+{
+  /* Check #1 [0, min_denorm * 2)
+   */
+  std::cout << "==[0, min_norm * 2)==\n";  
+
+  /* Check #2 [min_denorm * 2, min_norm)
+   */
+  std::cout << "==[min_denorm * 2, min_norm)==\n";
+
+  /* Check #3 [min_norm, max_norm]
+   */
+  std::cout << "==[min_norm, max_norm]==\n";
+}
+
 int main(int argc, char **argv)
 {
-  CHECK_ROUND_EO_BIT<5, 10>();
+  //CHECK_ROUND_EO_BIT<5, 10>();
+  CHECK_ROUND_E8M10();
 }
