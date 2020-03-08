@@ -211,7 +211,7 @@ struct ExMy {
     
     //round-to-even
     if(data < min_denorm() + min_denorm()){
-      //std::cout << "< 2 * min_denorm" << "\n";
+      // std::cout << "< 2 * min_denorm" << "\n";
       
       /* bit that identifying even/odd(the least significant bit after
        * truncating) is in exp.
@@ -227,16 +227,17 @@ struct ExMy {
       }
     }
     else{
-      //std::cout << "> 2 * min_denorm" << "\n";
+      // std::cout << "> 2 * min_denorm" << "\n";
       
       if(!(bits & eo_bit) &&
-	 (bits & (eo_bit - 1) & (eo_bit >> 1))){
+	 ((bits & (eo_bit - 1)) == (eo_bit >> 1))){
 	/*even after trunc, and data is at the halfway*/
+	// std::cout << "even + half\n";
 	bias = 0;
       }
     }
 
-    //print_bits(std::cout, eo_bit);
+    // print_bits(std::cout, eo_bit);
     
     data += bias;
     
@@ -272,9 +273,9 @@ std::ostream& operator<<(std::ostream& os, ExMy<X, Y> exmy)
   int E_exmy = exp + (int) ExMy<X, Y>::BIAS; //Can be -1
   os << "+" << ExMy<X, Y>::BIAS << " = " << E_exmy << " " \
      << std::bitset<X>(E_exmy < 0 ? 0 : E_exmy);
-  
+
+  os << " " <<exmy.data;
   return os;
 }
-
 
 #endif
