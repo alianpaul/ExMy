@@ -1,6 +1,5 @@
 #include "exmy.hpp"
-#include <iostream>
-#include <iomanip>
+#include "test_utils.hpp"
 #include <cassert>
 
 template<int X, int Y>

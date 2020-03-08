@@ -6,26 +6,26 @@
 #include <cmath>
 
 //For debugging
-#include <iostream>
-#include <iomanip>
-#include <bitset>
 
 using uint32 = unsigned int;
-//For debuging
-void print_bits(std::ostream& os, uint32 bits)
-{
-  if(bits >> 31)
-    os << "1 ";
-  else
-    os << "0 ";
 
-  //E
-  uint32 E = (bits >> 23) & 0xff;
-  os << std::bitset<8>(E) << ' ';
+// For debuging
+// #include <iostream>
+// #include <bitset>
+// void print_bits(std::ostream& os, uint32 bits)
+// {
+//   if(bits >> 31)
+//     os << "1 ";
+//   else
+//     os << "0 ";
 
-  uint32 M = bits & ((1 << (23 + 1)) - 1);
-  os << std::bitset<23>(M) << '\n';
-}
+//   E
+//   uint32 E = (bits >> 23) & 0xff;
+//   os << std::bitset<8>(E) << ' ';
+
+//   uint32 M = bits & ((1 << (23 + 1)) - 1);
+//   os << std::bitset<23>(M) << '\n';
+// }
 
 /* ExMy for X < 8
  * x: exponent bits, y: mantissa bits
@@ -258,34 +258,70 @@ struct ExMy {
     round();
     limitrange();
   }
+
+  // overload operators unary
+  operator float() const { return data; }
+
+  ExMy operator+=(const ExMy a)
+  {
+    data += a.data;
+    fixup();
+    return *this;
+  }
+
+  ExMy operator-=(const ExMy a)
+  {
+    data -= a.data;
+    fixup();
+    return *this;
+  }
+
+  ExMy operator*=(const ExMy a)
+  {
+    data *= a.data;
+    fixup();
+    return *this;
+  }
+
+  ExMy operator/=(const ExMy a)
+  {
+    data /= a.data;
+    fixup();
+    return *this;
+  }  
+
+  // overload operators binary
+  friend ExMy operator+(const ExMy a, const ExMy b)
+  {
+    ExMy c;
+    c.data = a.data + b.data;
+    c.fixup();
+    return c;
+  }
+
+  friend ExMy operator-(const ExMy a, const ExMy b)
+  {
+    ExMy c;
+    c.data = a.data - b.data;
+    c.fixup();
+    return c;
+  }
+
+  friend ExMy operator*(const ExMy a, const ExMy b)
+  {
+    ExMy c;
+    c.data = a.data * b.data;
+    c.fixup();
+    return c;
+  }
+
+  friend ExMy operator/(const ExMy a, const ExMy b)
+  {
+    ExMy c;
+    c.data = a.data / b.data;
+    c.fixup();
+    return c;
+  }
 };
-
-//For debug
-template<int X, int Y>
-std::ostream& operator<<(std::ostream& os, ExMy<X, Y> exmy)
-{
-  uint32 bits = 0; memcpy(&bits, &exmy.data, sizeof(float));
-  if(bits >> 31)
-    os << "1 ";
-  else
-    os << "0 ";
-
-  //E
-  uint32 E = (bits >> 23) & 0xff;
-  os << std::bitset<8>(E) << ' ';
-
-  uint32 M = bits & ((1 << (23 + 1)) - 1);
-  os << std::bitset<23>(M) << ' ';
-
-  int exp = (int) E - 127;
-  os << E << " -127 = "<< exp << " ";
-
-  int E_exmy = exp + (int) ExMy<X, Y>::BIAS; //Can be -1
-  os << "+" << ExMy<X, Y>::BIAS << " = " << E_exmy << " " \
-     << std::bitset<X>(E_exmy < 0 ? 0 : E_exmy);
-
-  os << " " <<exmy.data;
-  return os;
-}
 
 #endif

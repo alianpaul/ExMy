@@ -3,7 +3,7 @@ EXMY := include/exmy.hpp
 CC      := g++
 CCFLAGS := --std=c++11
 
-INCLUDES := -I./include
+INCLUDES := -I./include -I./
 LIBS     :=
 
 TEST_SRCS := $(wildcard test/*.cpp)
