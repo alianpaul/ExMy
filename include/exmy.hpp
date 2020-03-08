@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cmath>
 
 //For debugging
 #include <iostream>
@@ -248,6 +249,15 @@ struct ExMy {
     memcpy(&data, &bits, sizeof(float));
   }
 
+  void fixup()
+  {
+    if(std::isnan(data)) return;
+    if(std::isinf(data)) return;
+
+    limitrange();
+    round();
+    limitrange();
+  }
 };
 
 //For debug

@@ -14,7 +14,7 @@
 
 #define PRINT_ROUND(CASE, exmy, target) \
 { \
- exmy.round(); \
+ exmy.fixup(); \
  assert(exmy.data == target.data); \
 }
 
